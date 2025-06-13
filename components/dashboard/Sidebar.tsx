@@ -20,8 +20,8 @@ export default function Sidebar({ role }: SidebarProps) {
       icon: Home,
     },
     {
-      href: '/user/hak-cipta',
-      label: 'Hak Cipta',
+      href: '/user/pendaftaran',
+      label: 'Pendaftaran',
       icon: FileText,
     },
     {
