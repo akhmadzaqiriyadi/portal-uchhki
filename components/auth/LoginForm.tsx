@@ -29,26 +29,51 @@ export default function LoginForm() {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       const supabase = createClient()
-      
-      const { error } = await supabase.auth.signInWithPassword({
+
+      // 1. Sign in the user
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
-      if (error) {
-        throw error
+      if (signInError) {
+        throw signInError
       }
 
-      router.refresh()
-      router.push('/user/dashboard')
+      // 2. If sign-in is successful and we have user data, fetch their role
+      if (signInData.session?.user) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', signInData.session.user.id)
+          .single()
+
+        if (userError) {
+          // Handle case where user profile might not exist yet
+          // Default to user dashboard or show an error.
+          throw new Error('Could not retrieve user role. Please contact support.')
+        }
+
+        // 3. Redirect based on role
+        if (userData?.role === 'admin') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/user/dashboard')
+        }
+        router.refresh()
+      } else {
+        // This case should ideally not be reached if sign-in is successful without error
+        throw new Error('Login successful but no user data found.')
+      }
     } catch (err: any) {
       setError(err?.message || 'Something went wrong')
     } finally {
       setIsLoading(false)
     }
   }
+  
 
   return (
     <Card className="w-full max-w-md p-6 space-y-6">
